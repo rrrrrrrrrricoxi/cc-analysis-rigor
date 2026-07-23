@@ -1,0 +1,20 @@
+{
+  "name": "cc-analysis-rigor",
+  "owner": {
+    "name": "rrrrrrrrrricoxi",
+    "email": "ricoxishichuan@gmail.com"
+  },
+  "metadata": {
+    "description": "严谨数据分析交付物的方法包",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "cc-analysis-rigor",
+      "source": "./",
+      "description": "从原始表到经得起追问的交付物：口径、数据源、统计表达、产物纪律、多 agent 核验、人机协作",
+      "category": "productivity",
+      "tags": ["data-analysis", "statistics", "review", "reporting"]
+    }
+  ]
+}
