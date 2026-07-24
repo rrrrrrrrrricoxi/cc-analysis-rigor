@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>六道关卡 · 一条经得起追问的分析流水线</title>
+<style>
+  :root{
+    --ground:#F6F8FB; --surface:#FFFFFF; --surface-2:#EFF3F8;
+    --ink:#171C29; --ink-2:#3B4457; --muted:#69738A; --rule:#D9E0EA;
+    --accent:#22458C; --accent-soft:#E4EBF7;
+    --stop:#A96A0B; --stop-soft:#F7EDDC;
+    --fail:#96262B; --fail-soft:#F8E7E7;
+    --ok:#25664A;
+    --shadow:0 1px 2px rgba(23,28,41,.06),0 8px 24px -16px rgba(23,28,41,.18);
+    --serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","SimSun",Georgia,serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Microsoft YaHei",-apple-system,BlinkMacSystemFont,sans-serif;
+    --mono:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#0E1118; --surface:#161B25; --surface-2:#1D2430;
+      --ink:#E7EBF3; --ink-2:#C0C8D8; --muted:#8D97AC; --rule:#28303E;
+      --accent:#7FA3E8; --accent-soft:#1B2740;
+      --stop:#DFA750; --stop-soft:#2C2416;
+      --fail:#E08C8C; --fail-soft:#2E1D1D;
+      --ok:#63BE95;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E1118; --surface:#161B25; --surface-2:#1D2430;
+    --ink:#E7EBF3; --ink-2:#C0C8D8; --muted:#8D97AC; --rule:#28303E;
+    --accent:#7FA3E8; --accent-soft:#1B2740;
+    --stop:#DFA750; --stop-soft:#2C2416;
+    --fail:#E08C8C; --fail-soft:#2E1D1D;
+    --ok:#63BE95;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.7);
+  }
+  :root[data-theme="light"]{
+    --ground:#F6F8FB; --surface:#FFFFFF; --surface-2:#EFF3F8;
+    --ink:#171C29; --ink-2:#3B4457; --muted:#69738A; --rule:#D9E0EA;
+    --accent:#22458C; --accent-soft:#E4EBF7;
+    --stop:#A96A0B; --stop-soft:#F7EDDC;
+    --fail:#96262B; --fail-soft:#F8E7E7;
+    --ok:#25664A;
+    --shadow:0 1px 2px rgba(23,28,41,.06),0 8px 24px -16px rgba(23,28,41,.18);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+       font-family:var(--sans);font-size:16px;line-height:1.75;
+       -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:56px 24px 96px}
+  h1,h2,h3{font-family:var(--serif);font-weight:600;text-wrap:balance;margin:0}
+  p{margin:0}
+  a{color:var(--accent)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+           text-transform:uppercase;color:var(--muted)}
+  .sk{font-family:var(--mono);font-size:.92em;color:var(--accent);
+      background:var(--accent-soft);padding:.1em .4em;border-radius:3px;
+      white-space:nowrap}
+
+  /* ── masthead ── */
+  header{border-bottom:2px solid var(--ink);padding-bottom:28px;margin-bottom:12px}
+  header h1{font-size:clamp(30px,4.6vw,50px);line-height:1.2;letter-spacing:-.01em}
+  .sub{margin-top:16px;font-size:17px;color:var(--ink-2);max-width:62ch;line-height:1.7}
+  .thesis{margin-top:24px;padding:16px 20px;background:var(--surface);
+          border-left:3px solid var(--accent);box-shadow:var(--shadow);
+          font-family:var(--serif);font-size:19px;line-height:1.6}
+
+  section{margin-top:64px}
+  .shead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+         border-bottom:1px solid var(--rule);padding-bottom:10px;margin-bottom:26px}
+  .shead h2{font-size:25px}
+  .shead .note{font-size:14px;color:var(--muted)}
+
+  /* ── pipeline ── */
+  .pipe{display:flex;flex-direction:column;gap:12px}
+  .band{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+        padding:13px 18px;border:1px dashed var(--rule);border-radius:6px;
+        background:var(--surface);font-size:14px;color:var(--ink-2)}
+  .band .tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+             text-transform:uppercase;color:var(--muted);
+             border:1px solid var(--rule);padding:2px 7px;border-radius:99px}
+
+  .track{overflow-x:auto;padding:4px 0 8px}
+  .gates{display:grid;grid-template-columns:repeat(4,minmax(210px,1fr));gap:0;min-width:900px}
+  .gate{position:relative;background:var(--surface);border:1px solid var(--rule);
+        padding:18px 18px 16px;display:flex;flex-direction:column;gap:9px}
+  .gate + .gate{border-left:none}
+  .gate:first-child{border-radius:6px 0 0 6px}
+  .gate:last-child{border-radius:0 6px 6px 0}
+  .gate.cond{border-style:dashed;background:var(--surface-2)}
+  .gate::after{content:"";position:absolute;right:-7px;top:calc(50% - 7px);
+               width:13px;height:13px;background:var(--surface);
+               border-top:1px solid var(--rule);border-right:1px solid var(--rule);
+               transform:rotate(45deg);z-index:2}
+  .gate:last-child::after{display:none}
+  .gate .num{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--muted)}
+  .gate .xform{font-family:var(--mono);font-size:12px;color:var(--ink-2);
+               background:var(--surface-2);border-radius:3px;padding:4px 7px;
+               display:inline-block;line-height:1.5}
+  .gate.cond .xform{background:var(--surface)}
+  .gate h3{font-family:var(--mono);font-size:13.5px;color:var(--accent);
+           font-weight:600;letter-spacing:-.01em;line-height:1.45}
+  .gate .duty{font-size:14px;color:var(--ink);line-height:1.6}
+  .assume{margin-top:auto;padding-top:11px;border-top:1px dotted var(--rule);
+          font-size:12.5px;color:var(--muted);line-height:1.55;display:flex;gap:7px}
+  .assume .up{color:var(--fail);font-weight:700;flex:none;font-family:var(--mono)}
+
+  .legend{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;
+          font-size:13px;color:var(--muted)}
+  .legend b{color:var(--fail);font-family:var(--mono)}
+
+  /* ── tables ── */
+  .tbox{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;min-width:620px;font-size:14.5px}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--rule);
+        vertical-align:top;line-height:1.6}
+  thead th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+           text-transform:uppercase;color:var(--muted);
+           background:var(--surface-2);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.k{font-family:var(--mono);font-size:12.5px;color:var(--accent);white-space:nowrap}
+  td.assume-col{color:var(--fail)}
+
+  /* ── skill cards ── */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:6px;
+        padding:22px;display:flex;flex-direction:column;gap:13px;box-shadow:var(--shadow)}
+  .card.cross{border-top:3px solid var(--accent)}
+  .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .card h3{font-family:var(--mono);font-size:14px;color:var(--accent);font-weight:600}
+  .card .when{font-size:14px;color:var(--ink-2)}
+  .card .when b{color:var(--ink);font-weight:600}
+  .verdict{background:var(--surface-2);border-radius:5px;padding:12px 14px;
+           font-family:var(--serif);font-size:16.5px;line-height:1.55;color:var(--ink)}
+  .verdict .lbl{display:block;font-family:var(--mono);font-size:10.5px;
+                letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+                margin-bottom:5px}
+  .crash{border-left:3px solid var(--fail);background:var(--fail-soft);
+         padding:11px 14px;border-radius:0 5px 5px 0;font-size:13.5px;line-height:1.65}
+  .crash .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+              text-transform:uppercase;color:var(--fail);display:block;margin-bottom:4px}
+  .stopflag{display:inline-flex;align-items:center;gap:6px;font-size:12px;
+            font-family:var(--mono);color:var(--stop);background:var(--stop-soft);
+            padding:3px 9px;border-radius:99px;white-space:nowrap}
+
+  /* ── walkthrough ── */
+  .steps{display:flex;flex-direction:column;gap:0;counter-reset:s}
+  .step{display:grid;grid-template-columns:44px 1fr;gap:18px;padding:15px 0;
+        border-bottom:1px solid var(--rule)}
+  .step:last-child{border-bottom:none}
+  .step .n{font-family:var(--mono);font-size:13px;color:var(--muted);
+           padding-top:3px;font-variant-numeric:tabular-nums}
+  .step .body strong{font-weight:600}
+  .step .body .m{color:var(--muted);font-size:14px;display:block;margin-top:3px}
+  .step.hot{background:var(--stop-soft);margin:0 -16px;padding:15px 16px;border-radius:5px;
+            border-bottom-color:transparent}
+
+  .kicker{margin-top:20px;padding:18px 20px;background:var(--surface);
+          border:1px solid var(--rule);border-radius:6px;font-size:15px;line-height:1.7}
+  .kicker b{color:var(--fail)}
+
+  footer{margin-top:72px;padding-top:22px;border-top:1px solid var(--rule);
+         font-size:13px;color:var(--muted);display:flex;justify-content:space-between;
+         gap:16px;flex-wrap:wrap}
+
+  @media (max-width:640px){
+    .wrap{padding:36px 16px 72px}
+    .step{grid-template-columns:32px 1fr;gap:12px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">cc-analysis-rigor · 六个方法 skill</div>
+  <h1>六道关卡</h1>
+  <p class="sub">把一批试验数据做成一份经得起追问的交付物，中间要过六道关。四道串在主线上，两道横切全程。这张图讲它们各自守什么、以及为什么必须是六个而不是一张大清单。</p>
+  <div class="thesis">数据分析出错的地方不是均匀分布的，它们集中在<b>交接口</b>——数据换手、表变成数、数变成话、话变成产物。而每个交接口有一个共同性质：<b>下游的检查，发现不了上游的错误。</b></div>
+</header>
+
+<section>
+  <div class="shead">
+    <h2>流程</h2>
+    <span class="note">主线四关按材料流动排序；上下两条横切带不在流水线上，任何时刻都可能需要</span>
+  </div>
+
+  <div class="pipe">
+    <div class="band">
+      <span class="tag">横切</span>
+      <span><span class="sk">long-task-collaboration</span> — 任何<b>正要开口问人、正要汇报</b>的时刻</span>
+    </div>
+
+    <div class="track">
+      <div class="gates">
+
+        <div class="gate cond">
+          <span class="num">条件关卡 · 数据不是你生成的才走</span>
+          <span class="xform">外部数据 → 可信的数据</span>
+          <h3>data-source-skepticism</h3>
+          <p class="duty">它根本不是你以为的那个源；或者它是真的，但回答不了你的问题。</p>
+          <p class="assume"><span class="up">↑</span><span>无上游假定。这是链条的起点。</span></p>
+        </div>
+
+        <div class="gate">
+          <span class="num">关卡一</span>
+          <span class="xform">原始表 → 分析表</span>
+          <h3>analysis-groundwork</h3>
+          <p class="duty">谁和谁可比、几行算一个独立单元、哪些行进哪些行出。</p>
+          <p class="assume"><span class="up">↑</span><span>假定：数据是真的、是那个源</span></p>
+        </div>
+
+        <div class="gate">
+          <span class="num">关卡二</span>
+          <span class="xform">数字 → 能说出口的话</span>
+          <h3>statistical-caliber</h3>
+          <p class="duty">这个数能不能这么说；以及没受过统计训练的读者能不能懂。</p>
+          <p class="assume"><span class="up">↑</span><span>假定：每一档口径本身算对了</span></p>
+        </div>
+
+        <div class="gate">
+          <span class="num">关卡三</span>
+          <span class="xform">话 → 产物</span>
+          <h3>generated-deliverable-discipline</h3>
+          <p class="duty">结论对但产物错，而且是静默错：不报错、构建成功、内容坏了。</p>
+          <p class="assume"><span class="up">↑</span><span>假定：数字和措辞已定稿</span></p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="band">
+      <span class="tag">横切</span>
+      <span><span class="sk">verified-survey</span> — 任何<b>"我需要确信，而不只是覆盖"</b>的时刻</span>
+    </div>
+  </div>
+
+  <p class="legend"><span><b>↑</b> 每道闸门底部那行，是它<b>向上游</b>的假定。检查只向下流，假定只向上指——两者方向相反，这就是"下游发现不了上游"的机制。</span></p>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>交接契约</h2>
+    <span class="note">看最后一列——那就是上面那条论点的具体形式</span>
+  </div>
+  <div class="tbox">
+    <table>
+      <thead><tr><th>关卡</th><th>交出去的东西</th><th>它假定上游已经做完了</th></tr></thead>
+      <tbody>
+        <tr><td class="k">data-source-skepticism</td><td>一批身份已确认、适配性已验的数据</td><td class="assume-col">——</td></tr>
+        <tr><td class="k">analysis-groundwork</td><td>一张口径已固化的分析表 ＋ prep 脚本 ＋ sanity print</td><td class="assume-col">数据是真的</td></tr>
+        <tr><td class="k">statistical-caliber</td><td>一组带口径、经得起追问、非统计读者能懂的数字与措辞</td><td class="assume-col">每一档本身算对了</td></tr>
+        <tr><td class="k">generated-deliverable-discipline</td><td>一份可复现、数字绑定、验证过的产物</td><td class="assume-col">数字和措辞已定稿</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="kicker">口径错了（谁和谁可比），<span class="sk">statistical-caliber</span> 的每一条检查<b>都会通过</b>——因为它假定每一档本身算对了。数据源错了，地基上所有判断白做。<br>这就是为什么是六个而不是一张大清单：<b>大清单会让你以为"我全过了一遍"，而真正决定成败的是顺序和前置假设。</b></div>
+</section>
+
+<section>
+  <div class="shead"><h2>四道主线关卡</h2><span class="note">醒来时刻 / 守什么 / 标志性判据 / 真实翻车现场</span></div>
+  <div class="cards">
+
+    <div class="card">
+      <div class="top"><h3>data-source-skepticism</h3><span class="eyebrow">条件关卡</span></div>
+      <p class="when"><b>醒来：</b>别人给了你一批数据，或者你从 API 抓了一批。</p>
+      <p class="when">先搜自己地盘有没有同源旧数据（判定力高于统计指纹）→ 查<b>取数代码的实际参数</b>（最危险的是没写的参数）→ 适配性四项 → 需要时做指纹判定。另有独立一节：<b>量化天花板</b>——别人问"能不能更准"时，先算"就算全做对天花板在哪"。</p>
+      <div class="verdict"><span class="lbl">标志性判据</span>「太干净」是嫌疑，不是优点。</div>
+      <div class="crash"><span class="lbl">翻车现场</span>一个漏掉的 API 参数，让接口回退到"自动挑最好的模型"默认档。此后连续几轮汇报都把数据称作原以为的那个源——<b>而数据看起来完全正常</b>。</div>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>analysis-groundwork</h3><span class="eyebrow">关卡一</span></div>
+      <p class="when"><b>醒来：</b>一张 Excel/CSV 摆在面前，你正要写第一行 groupby。</p>
+      <p class="when">逐列点名（把"我从没打开看过"的列当一级风险）→ 口径盘点按<b>爆炸半径</b>分承重／可延后 → 承重的停下来等人答。</p>
+      <p><span class="stopflag">◆ 停止点 — 承重口径必须等人拍板</span></p>
+      <div class="verdict"><span class="lbl">标志性判据</span>同一份文档里两处计数对不上 ＝ 报警器。不许当四舍五入糊过去。</div>
+      <div class="crash"><span class="lbl">翻车现场</span>缺失值在拼分组键时彼此相同，静默并出一个不存在的组，独立单元 35 → 36，一整组统计作废。另一次：编码语义读错，"干净对比" 55 → 96 条，头条在 <b>p=0.055 不成立 ↔ p=0.0019 成立</b> 之间翻了个面。</div>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>statistical-caliber</h3><span class="eyebrow">关卡二</span></div>
+      <p class="when"><b>醒来：</b>你正要写"提升 X%"、"显著"、"相关"。</p>
+      <p class="when">口径阶梯并排列出（同一个量在多个口径下都是真的）＋ 十条清单逐条过 ＋ 分层可下钻表达（外层通俗、下钻第一句永远先答<b>"为什么需要这一步"</b>）。</p>
+      <p><span class="stopflag">◆ 停止点 — 主口径只定一个</span></p>
+      <div class="verdict"><span class="lbl">标志性判据</span>换一个同样合理的口径，这条结论会不会垮？会，就必须说出来。</div>
+      <div class="crash"><span class="lbl">翻车现场</span>把趋势检验的 p 值配给了分档提升的量级——数字都是真的，配对是错的。另一处：稳健性对照用了不同量纲的估计量，<b>而且偏差方向恰好对结论有利</b>。</div>
+    </div>
+
+    <div class="card">
+      <div class="top"><h3>generated-deliverable-discipline</h3><span class="eyebrow">关卡三</span></div>
+      <p class="when"><b>醒来：</b>改报告、改 deck、更新数字、验收图表。</p>
+      <p class="when">锁边界（工作区干净）→ 验真源（产物与脚本重生成逐字节一致）→ 改脚本不改产物 → 固定顺序验证，<b>便宜的先跑</b>（重跑 → 语法 → 秒级数值断言 → 浏览器体检 → 逐页看图 → 交互实测 → diff）。</p>
+      <div class="verdict"><span class="lbl">标志性判据</span>「体检报 0 问题」≠「可以交」。机器查几何，人眼查审美，实测查交互。</div>
+      <div class="crash"><span class="lbl">翻车现场</span>一页排版塌了，自动体检报 0 问题、一整套多 agent 验证流程全绿；最后是<b>收件人自己贴了张截图</b>才发现——流程里根本没有人真的看过图。</div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="shead"><h2>两条横切</h2><span class="note">不在流水线上，任何时刻都可能需要</span></div>
+  <div class="cards">
+
+    <div class="card cross">
+      <div class="top"><h3>long-task-collaboration</h3><span class="eyebrow">横切 · 人</span></div>
+      <p class="when"><b>醒来：</b>要提问、要汇报、子 agent 回来了、被说"你怎么没做"。</p>
+      <p class="when">它插在<b>每个关卡的停止点</b>上：地基的承重项、主口径选哪一档、编码字段什么意思、产物验收。</p>
+      <div class="verdict"><span class="lbl">标志性判据</span>我问的这个问题，他有 context 回答吗？选项里引用了他还没被你带着过一遍的东西，就不能问——先讲清，下一轮再问。</div>
+      <div class="crash"><span class="lbl">翻车现场</span>一次问了三个问题：第一个凭身份就能答，当场被回答；后两个引用了 agent 自己刚读出来的产物和数字，<b>两问全部空白并被驳回</b>。</div>
+    </div>
+
+    <div class="card cross">
+      <div class="top"><h3>verified-survey</h3><span class="eyebrow">横切 · 确信</span></div>
+      <p class="when"><b>醒来：</b>对象大到一个 context 装不下，或者结论要拿去做决定。</p>
+      <p class="when">并行调研 → 对抗核验（默认立场"这是误报"）→ 综合 → <b>完整性批评者</b>。它和其余五个是<b>元关系</b>：核验的是它们的产出。</p>
+      <div class="verdict"><span class="lbl">标志性判据</span>有没有人试图推翻过这些发现？没有的话，规模只是在批量生产待核实的猜测。</div>
+      <div class="crash"><span class="lbl">翻车现场</span>脚本里写着"先去重再核验"，紧跟的代码只有一个按严重度过滤——<b>去重从来没实现</b>。同一件事被两个方向各报一次，一条判成立、一条判推翻。</div>
+    </div>
+
+  </div>
+  <div class="kicker">起编排时有一条容易漏：把<b>纳入规则和分组键也显式塞进核验队列</b>。它们不在任何 findings 数组里，所以<b>结构上没人会去证伪它们</b>——而那正是最贵的两次错误所在。</div>
+</section>
+
+<section>
+  <div class="shead"><h2>顺序不是死的</h2><span class="note">取决于数据从哪来</span></div>
+  <div class="tbox">
+    <table>
+      <thead><tr><th>数据来源</th><th>先走哪个</th><th>为什么</th></tr></thead>
+      <tbody>
+        <tr><td>别人给的 / API 抓的</td><td class="k">data-source-skepticism → analysis-groundwork</td><td>在假数据上设计可比性是白做</td></tr>
+        <tr><td>你自己的试验记录</td><td class="k">analysis-groundwork 先行</td><td>源头没疑问，问题在可比性</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="kicker">上一个项目两种都有：试验表是自己的（地基先行），天气数据是外部抓的（源头怀疑主义，后来真的翻车了）。所以 <span class="sk">/analysis-sprint</span> 里数据源那一关写的是<b>条件关卡</b>，不是固定第二位。</div>
+</section>
+
+<section>
+  <div class="shead"><h2>下次 sprint 实际怎么走</h2><span class="note">/analysis-sprint</span></div>
+  <div class="steps">
+    <div class="step"><span class="n">00</span><div class="body"><strong>开场四问</strong><span class="m">数据形态 · 要回答什么 · 交付物给谁 · <b>有没有上一版</b>。第四问是特意加的，它决定后面所有"两版数字对不上"的争论。</span></div></div>
+    <div class="step hot"><span class="n">01</span><div class="body"><strong>地基 — 逐列点名，产出承重／可延后两档清单，然后停</strong><span class="m">◆ 整条链上最省钱的一次等待。上个项目里编码语义读错让头条翻面，就是因为这一停发生得太晚。</span></div></div>
+    <div class="step"><span class="n">02</span><div class="body"><strong>外部数据（如果这季又要拉天气／土壤）</strong><span class="m">先适配性（便宜、常常直接否掉），再真伪（贵）。</span></div></div>
+    <div class="step"><span class="n">03</span><div class="body"><strong>算 ＋ 判断每个数能不能这么说</strong><span class="m">主口径只定一个，全文头条统一用它；其余档进阶梯表和附录。</span></div></div>
+    <div class="step"><span class="n">04</span><div class="body"><strong>讲给谁听</strong><span class="m">方法卡、四层下钻、外层不出现裸的 p 值／相关系数／区间端点。</span></div></div>
+    <div class="step"><span class="n">05</span><div class="body"><strong>做产物</strong><span class="m">数字从数据文件渲染、加构建后断言；图表先过"有没有替读者下结论"那一档，再过逐项清单。</span></div></div>
+    <div class="step"><span class="n">06</span><div class="body"><strong>交付前核验</strong><span class="m">装得下就自己读，别起编排；起编排就带上完整性批评者。</span></div></div>
+  </div>
+  <div class="kicker"><b>全程：</b>每次汇报挂一段「还欠着的」，下一轮从它开始；子 agent 的结果不许原样转发，要重新综合成分层 ＋ 编号 ＋ 带位置和改法的清单，末尾把调度权交还。</div>
+</section>
+
+<section>
+  <div class="shead"><h2>触发时刻</h2><span class="note">六个的醒来时刻两两不重叠，所以正常不会互抢</span></div>
+  <div class="tbox">
+    <table>
+      <thead><tr><th>时刻</th><th>谁醒</th></tr></thead>
+      <tbody>
+        <tr><td>还没有任何数字</td><td class="k">analysis-groundwork</td></tr>
+        <tr><td>数据不是我生成的</td><td class="k">data-source-skepticism</td></tr>
+        <tr><td>一个数正要出口</td><td class="k">statistical-caliber</td></tr>
+        <tr><td>要动生成型产物</td><td class="k">generated-deliverable-discipline</td></tr>
+        <tr><td>要派 agent</td><td class="k">verified-survey</td></tr>
+        <tr><td>正要开口问人</td><td class="k">long-task-collaboration</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="kicker">「口径」两个字原本被三个 skill 抢，已经拆开：<span class="sk">data-source-skepticism</span> 不再挂它，<span class="sk">analysis-groundwork</span> 用「哪些行能比／几个独立单元」，<span class="sk">statistical-caliber</span> 保留「口径／显著／伪重复／FDR」。</div>
+</section>
+
+<footer>
+  <span>cc-analysis-rigor · 六个 skill ＋ /analysis-sprint · MIT</span>
+  <span>从一次多省田间试验分析沉淀，已脱敏为领域无关方法</span>
+</footer>
+
+</div>
+</body>
+</html>
