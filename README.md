@@ -23,8 +23,8 @@ claude plugin install cc-analysis-rigor@cc-analysis-rigor
 |---|---|---|
 | **analysis-groundwork** | 拿到原始表，**还没算任何数** | 谁和谁可比、几行算一个独立单元、纳入排除。**错在这里的，下游所有检查都发现不了** |
 | **data-source-skepticism** | 数据不是你自己生成的 | 数据根本不是你以为的那个源；或者它是真的，但回答不了你的问题 |
-| **statistical-caliber** | 一个数**正要被说出口** | 口径没标、伪重复、扫描出来的假阳、p 值配错检验、样本不够却下了结论 |
-| **generated-deliverable-discipline** | 要改脚本生成的产物 | 结论对但产物错，而且是**静默**错：手改被覆盖、数字静默过期、图替读者下了结论 |
+| **statistical-caliber** | 一个数**正要被说出口** | 口径没标、伪重复、扫描出来的假阳、p 值配错检验、样本不够却下了结论、真信号被混杂盖住却写成"没关系" |
+| **generated-deliverable-discipline** | 要改脚本生成的产物 | 结论对但产物错，而且是**静默**错：手改被覆盖、数字静默过期、旧结论只改了一半、图替读者下了结论 |
 | **verified-survey** | 要派多 agent 查一件事 | 一堆看起来有道理、但没人试图推翻过的发现 |
 | **long-task-collaboration** | 正要开口问人 / 正要汇报 | 问了对方没 context 的问题、只改被点到的那一处、承诺被小修复顶掉 |
 

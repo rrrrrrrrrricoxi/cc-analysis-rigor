@@ -19,15 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-NOTICE
-
-Earlier versions (through v0.1) of
-skills/schedule-usage-reset-fallback/usage-reset.mjs ported credential reading
-(keychain then file), token-expiry check, proxy tunnel, and usage-API call logic
-from claude-hud (https://github.com/jarrodwatts/claude-hud), Copyright (c) Jarrod
-Watts, licensed under the MIT License. As of v0.2 that code has been removed in
-favor of Claude Code's own status line data, so no claude-hud-derived code
-remains. Kept here as an acknowledgement.
