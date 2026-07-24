@@ -9,11 +9,11 @@
 仓库本身既是 marketplace 也是 plugin：
 
 ```
-claude plugin marketplace add /Users/notrico/Code/cc-analysis-rigor
-claude plugin install cc-analysis-rigor
+claude plugin marketplace add rrrrrrrrrricoxi/cc-analysis-rigor
+claude plugin install cc-analysis-rigor@cc-analysis-rigor
 ```
 
-推到 GitHub 之后换成仓库地址即可。
+本地开发时可以把第一行换成仓库的本地路径。
 
 ## 六个 skill 各管一段
 
