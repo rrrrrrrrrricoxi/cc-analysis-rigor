@@ -183,14 +183,14 @@
 <header>
   <div class="eyebrow">cc-analysis-rigor · 六个方法 skill</div>
   <h1>六道关卡</h1>
-  <p class="sub">把一批试验数据做成一份经得起追问的交付物，中间要过六道关。四道串在主线上，两道横切全程。这张图讲它们各自守什么、以及为什么必须是六个而不是一张大清单。</p>
+  <p class="sub">把一批试验数据做成一份经得起追问的交付物，中间要过六道关——编号与 <span class="sk">/analysis-sprint</span> 一一对应。这张图讲它们各自守什么、以及为什么必须是六个而不是一张大清单。</p>
   <div class="thesis">数据分析出错的地方不是均匀分布的，它们集中在<b>交接口</b>——数据换手、表变成数、数变成话、话变成产物。而每个交接口有一个共同性质：<b>下游的检查，发现不了上游的错误。</b></div>
 </header>
 
 <section>
   <div class="shead">
     <h2>流程</h2>
-    <span class="note">主线四关按材料流动排序；上下两条横切带不在流水线上，任何时刻都可能需要</span>
+    <span class="note">主线关卡按材料流动排序，编号跟 /analysis-sprint 走（条件关：外部数据才走）；上下两条横切带不在流水线上，任何时刻都可能需要</span>
   </div>
 
   <div class="pipe">
@@ -203,7 +203,7 @@
       <div class="gates">
 
         <div class="gate cond">
-          <span class="num">条件关卡 · 数据不是你生成的才走</span>
+          <span class="num">关卡二 · 条件 · 数据不是你生成的才走</span>
           <span class="xform">外部数据 → 可信的数据</span>
           <h3>data-source-skepticism</h3>
           <p class="duty">它根本不是你以为的那个源；或者它是真的，但回答不了你的问题。</p>
@@ -219,7 +219,7 @@
         </div>
 
         <div class="gate">
-          <span class="num">关卡二</span>
+          <span class="num">关卡三 · 四</span>
           <span class="xform">数字 → 能说出口的话</span>
           <h3>statistical-caliber</h3>
           <p class="duty">这个数能不能这么说；以及没受过统计训练的读者能不能懂。</p>
@@ -227,7 +227,7 @@
         </div>
 
         <div class="gate">
-          <span class="num">关卡三</span>
+          <span class="num">关卡五</span>
           <span class="xform">话 → 产物</span>
           <h3>generated-deliverable-discipline</h3>
           <p class="duty">结论对但产物错，而且是静默错：不报错、构建成功、内容坏了。</p>
@@ -239,7 +239,7 @@
 
     <div class="band">
       <span class="tag">横切</span>
-      <span><span class="sk">verified-survey</span> — 任何<b>"我需要确信，而不只是覆盖"</b>的时刻</span>
+      <span><span class="sk">verified-survey</span> — 关卡六 · 交付前核验；也是任何<b>"我需要确信，而不只是覆盖"</b>的时刻</span>
     </div>
   </div>
 
@@ -266,11 +266,11 @@
 </section>
 
 <section>
-  <div class="shead"><h2>四道主线关卡</h2><span class="note">醒来时刻 / 守什么 / 标志性判据 / 真实翻车现场</span></div>
+  <div class="shead"><h2>主线关卡（一～五）</h2><span class="note">醒来时刻 / 守什么 / 标志性判据 / 真实翻车现场</span></div>
   <div class="cards">
 
     <div class="card">
-      <div class="top"><h3>data-source-skepticism</h3><span class="eyebrow">条件关卡</span></div>
+      <div class="top"><h3>data-source-skepticism</h3><span class="eyebrow">关卡二 · 条件</span></div>
       <p class="when"><b>醒来：</b>别人给了你一批数据，或者你从 API 抓了一批。</p>
       <p class="when">先搜自己地盘有没有同源旧数据（判定力高于统计指纹）→ 查<b>取数代码的实际参数</b>（最危险的是没写的参数）→ 适配性四项 → 需要时做指纹判定。另有独立一节：<b>量化天花板</b>——别人问"能不能更准"时，先算"就算全做对天花板在哪"。</p>
       <div class="verdict"><span class="lbl">标志性判据</span>「太干净」是嫌疑，不是优点。</div>
@@ -287,7 +287,7 @@
     </div>
 
     <div class="card">
-      <div class="top"><h3>statistical-caliber</h3><span class="eyebrow">关卡二</span></div>
+      <div class="top"><h3>statistical-caliber</h3><span class="eyebrow">关卡三 · 四</span></div>
       <p class="when"><b>醒来：</b>你正要写"提升 X%"、"显著"、"相关"。</p>
       <p class="when">口径阶梯并排列出（同一个量在多个口径下都是真的）＋ 十条清单逐条过 ＋ 分层可下钻表达（外层通俗、下钻第一句永远先答<b>"为什么需要这一步"</b>）。</p>
       <p><span class="stopflag">◆ 停止点 — 主口径只定一个</span></p>
@@ -296,7 +296,7 @@
     </div>
 
     <div class="card">
-      <div class="top"><h3>generated-deliverable-discipline</h3><span class="eyebrow">关卡三</span></div>
+      <div class="top"><h3>generated-deliverable-discipline</h3><span class="eyebrow">关卡五</span></div>
       <p class="when"><b>醒来：</b>改报告、改 deck、更新数字、验收图表。</p>
       <p class="when">锁边界（工作区干净）→ 验真源（产物与脚本重生成逐字节一致）→ 改脚本不改产物 → 固定顺序验证，<b>便宜的先跑</b>（重跑 → 语法 → 秒级数值断言 → 浏览器体检 → 逐页看图 → 交互实测 → diff）。</p>
       <div class="verdict"><span class="lbl">标志性判据</span>「体检报 0 问题」≠「可以交」。机器查几何，人眼查审美，实测查交互。</div>
@@ -307,7 +307,7 @@
 </section>
 
 <section>
-  <div class="shead"><h2>两条横切</h2><span class="note">不在流水线上，任何时刻都可能需要</span></div>
+  <div class="shead"><h2>两条横切</h2><span class="note">不在流水线上，任何时刻都可能需要；其中 verified-survey 同时押尾为关卡六</span></div>
   <div class="cards">
 
     <div class="card cross">
@@ -319,7 +319,7 @@
     </div>
 
     <div class="card cross">
-      <div class="top"><h3>verified-survey</h3><span class="eyebrow">横切 · 确信</span></div>
+      <div class="top"><h3>verified-survey</h3><span class="eyebrow">关卡六 · 横切 · 确信</span></div>
       <p class="when"><b>醒来：</b>对象大到一个 context 装不下，或者结论要拿去做决定。</p>
       <p class="when">并行调研 → 对抗核验（默认立场"这是误报"）→ 综合 → <b>完整性批评者</b>。它和其余五个是<b>元关系</b>：核验的是它们的产出。</p>
       <div class="verdict"><span class="lbl">标志性判据</span>有没有人试图推翻过这些发现？没有的话，规模只是在批量生产待核实的猜测。</div>
